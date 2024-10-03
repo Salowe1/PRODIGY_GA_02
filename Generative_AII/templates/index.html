@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Image Generation App</title>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1 class="sidebar-title">OldGPT</h1>
+            <ul class="sidebar-menu">
+                <li><button class="menu-item" onclick="createNewChat()">Create a new chat</button></li>
+                <li><button class="menu-item" onclick="goToGitHub()">GitHub</button></li>
+                <li><button class="menu-item" onclick="clearEverything()">Clear everything</button></li>
+            </ul>
+        </div>
+
+        <div class="main-content">
+            <h1>Generate an Image from Text</h1>
+            <div class="input-section">
+                <label for="model">Model</label>
+                <select id="model" class="input-field">
+                    <option value="stable-diffusion">Stable Diffusion</option>
+                </select>
+                <label for="prompt">Enter a text prompt</label>
+                <input type="text" id="prompt" class="input-field" placeholder="e.g., A futuristic cityscape with flying cars">
+                <button class="generate-btn" onclick="generateImage()">Generate</button>
+                <p id="error-message" class="error-message"></p>
+            </div>
+
+            <!-- Loading Animation -->
+            <div id="loader" class="loader" style="display: none;">
+                <span></span><span></span><span></span>
+            </div>
+
+            <img id="generated-image" class="generated-image" alt="Generated Image" />
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p><span class="at-symbol">@</span> Developed by Salowe</p>
+    </footer>
+
+    <script>
+        async function generateImage() {
+            const prompt = document.getElementById('prompt').value;
+            const errorMessage = document.getElementById('error-message');
+            const loader = document.getElementById('loader');
+            const generatedImage = document.getElementById('generated-image');
+
+            errorMessage.textContent = ''; // Clear previous error messages
+            generatedImage.src = ''; // Clear the previous image
+            loader.style.display = 'block'; // Show loading animation
+
+            if (!prompt.trim()) {
+                errorMessage.textContent = 'Please enter a prompt before generating an image.';
+                loader.style.display = 'none'; // Hide loading animation
+                return;
+            }
+
+            try {
+                const response = await fetch('/generate_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const data = await response.json();
+                if (data.image_data) {
+                    generatedImage.src = `data:image/png;base64,${data.image_data}`;
+                } else {
+                    throw new Error('Image generation failed');
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Failed to generate image: ' + error.message;
+            } finally {
+                loader.style.display = 'none'; // Hide loading animation after text is generated
+            }
+        }
+    </script>
+</body>
+</html>
